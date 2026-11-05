@@ -1,0 +1,115 @@
+@page {
+  size: A4;
+  margin: 18mm 17mm 18mm 17mm;
+}
+
+html { font-size: 10.2pt; }
+
+body {
+  font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", sans-serif;
+  line-height: 1.72;
+  color: #1a1a1a;
+  margin: 0;
+  text-align: justify;
+}
+
+h1 {
+  font-size: 22pt;
+  text-align: center;
+  color: #1f3a5f;
+  margin: 0 0 6pt 0;
+  padding-bottom: 8pt;
+  border-bottom: 2pt solid #2e6da4;
+}
+
+h2 {
+  font-size: 15pt;
+  color: #1f3a5f;
+  margin: 20pt 0 7pt 0;
+  padding-left: 7pt;
+  border-left: 4pt solid #2e6da4;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 12pt;
+  color: #2e6da4;
+  margin: 13pt 0 5pt 0;
+  page-break-after: avoid;
+}
+
+h4 {
+  font-size: 10.8pt;
+  color: #333;
+  margin: 10pt 0 4pt 0;
+  page-break-after: avoid;
+}
+
+p { margin: 4pt 0 6pt 0; }
+
+blockquote {
+  margin: 8pt 0;
+  padding: 7pt 11pt;
+  background: #eef3f9;
+  border-left: 3pt solid #2e6da4;
+  color: #24384f;
+}
+blockquote p { margin: 2pt 0; }
+
+code {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.9em;
+  background: #f2f4f7;
+  padding: 0.5pt 2pt;
+  border-radius: 2pt;
+}
+
+pre {
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 8.6pt;
+  line-height: 1.45;
+  background: #f6f8fa;
+  border: 0.6pt solid #d6dde6;
+  border-left: 3pt solid #2e6da4;
+  padding: 7pt 9pt;
+  white-space: pre-wrap;
+  word-break: break-all;
+  page-break-inside: avoid;
+  margin: 6pt 0 8pt 0;
+}
+pre code { background: none; padding: 0; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 7pt 0 10pt 0;
+  font-size: 8.8pt;
+  line-height: 1.45;
+  page-break-inside: avoid;
+}
+th {
+  background: #e8eff7;
+  color: #1f3a5f;
+  font-weight: bold;
+  border: 0.5pt solid #b9c9da;
+  padding: 4pt 5pt;
+}
+td {
+  border: 0.5pt solid #cfd8e3;
+  padding: 4pt 5pt;
+  vertical-align: top;
+}
+tr:nth-child(even) td { background: #fafcff; }
+
+ul, ol { margin: 3pt 0 7pt 0; padding-left: 18pt; }
+li { margin: 2pt 0; }
+
+hr {
+  border: none;
+  border-top: 0.6pt solid #c9d3df;
+  margin: 14pt 0;
+}
+
+a { color: #2e6da4; text-decoration: none; }
+
+strong { color: #12263a; }

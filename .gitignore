@@ -1,0 +1,35 @@
+﻿# ---- data & model weights ----
+data/
+models/
+*.pt
+*.pth
+*.onnx
+*.joblib
+
+# ---- generated outputs ----
+results/predictions/
+results/metrics/
+logs/
+runs/
+
+# ---- keep small result tables (do NOT ignore results/tables) ----
+
+# ---- staging / zip ----
+_pkg/
+*.zip
+
+# ---- generated HTML ----
+report/report.html
+docs/*.html
+
+# ---- python ----
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+desktop.ini

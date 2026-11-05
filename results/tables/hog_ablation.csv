@@ -1,0 +1,9 @@
+factor,setting,AP@0.5,AP_small,ms_per_image
+Hard negatives,0,0.0403,0.0085,88.3
+Hard negatives,"6,000",0.0463,0.0097,70.1
+Feature,HOG,0.0463,0.0097,70.1
+Feature,HOG + LBP,0.0563,0.0115,81.6
+Classifier,Linear SVM,0.0463,0.0097,70.1
+Classifier,Random Forest,0.0534,0.0153,75.3
+Inference,Sliding window,0.0115,0.0006,576.5
+Inference,Black-hat proposals,0.0463,0.0097,70.1
