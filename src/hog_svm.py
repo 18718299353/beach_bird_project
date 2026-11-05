@@ -37,6 +37,11 @@ hog_svm.py —— 机器学习方法：HOG / LBP 手工特征 + 滑窗 + SVM/Ran
 并且它和 YOLO 形成鲜明对比：一个靠"穷举 + 手工特征"，一个靠"学习候选区域"。
 """
 
+# Hog + svm分类方法
+# 详情看上面注释
+#
+#
+
 from __future__ import annotations
 
 import json
