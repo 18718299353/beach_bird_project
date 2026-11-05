@@ -17,6 +17,12 @@
 用 AP@0.5 和最佳 F1 选择。报告中的 "parameter sensitivity" 表就来自这里。
 """
 
+# 该文件用来为传统方法调参
+# 找到合适的参数给传统方法使用
+# 最终会输出一个classical_best_params.json，即调整好的参数
+# 该json文件会给后续的run_classical文件使用
+#
+
 from __future__ import annotations
 
 import argparse
