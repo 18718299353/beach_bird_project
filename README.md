@@ -1,10 +1,10 @@
 # Beach Bird Detection — Classical, HOG+SVM and YOLO
 
 A reproducible benchmark of **three families of computer-vision methods** for detecting birds in
-cluttered beach / wetland scenes, built for the COMP9517 (Computer Vision) group project.
+cluttered beach / wetland scenes, built for the Computer Vision group project.
 
 The project uses the [Beach Bird Detection Dataset](https://www.kaggle.com/datasets/liugalhigh/beach-bird)
-(1,900 images, 12,024 bird bounding boxes, 512×512, single class `bird`).
+(Including 1,900 images, 12,024 bird bounding boxes, 512×512, single class `bird`).
 
 ---
 
@@ -28,7 +28,7 @@ test split.
 
 ---
 
-## Results at a glance
+## Results at a glance (Running on 3060 laptop)
 
 <!-- RESULTS_TABLE_START -->
 Test-set results, thresholds selected on validation data (see `results/tables/main_results.csv`):
@@ -75,7 +75,7 @@ beach_bird_project/
 ├── README.md
 ├── requirements.txt
 ├── docs/
-│   └── 使用文档_中文.md          # detailed beginner-friendly manual (Chinese)
+│   └── manual.md          # detailed beginner-friendly manual
 ├── src/
 │   ├── common.py                # dataset, IoU, NMS, AP, metrics
 │   ├── classical.py             # non-learning methods
