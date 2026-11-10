@@ -21,6 +21,8 @@
     results/metrics/hard_negatives_<name>.json   难负样本位置（供其他分类器复用）
 """
 
+# 进行模型训练,构建训练数据、训练分类器、难负样本挖掘、保存模型
+
 from __future__ import annotations
 
 import argparse
@@ -33,6 +35,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from src.common import (METRICS_DIR, MODELS_DIR, PRED_DIR, ensure_dirs,
                         evaluate_ap, load_split, save_predictions,
                         select_operating_threshold)

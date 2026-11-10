@@ -17,6 +17,9 @@
       这正是做"步长/尺度对精度与速度影响"实验的方便之处。
 """
 
+# 模型测试
+# 加载训练好的模型，使用滑动窗口检测鸟类并评估性能
+
 from __future__ import annotations
 
 import argparse

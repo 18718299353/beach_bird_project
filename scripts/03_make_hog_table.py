@@ -10,6 +10,9 @@
   - 推理方式：全图滑窗 vs 传统候选框 + HOG 分类（级联）
 """
 
+# 构建消融对比表
+# 完成训练运行后
+
 from __future__ import annotations
 
 import csv

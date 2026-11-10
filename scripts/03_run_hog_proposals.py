@@ -19,6 +19,9 @@
     python scripts/03_run_hog_proposals.py --model hog_linear --split test
 """
 
+# 模型测试
+# 加载训练好的模型，使用滑动窗口检测鸟类并评估性能
+
 from __future__ import annotations
 
 import argparse
