@@ -434,10 +434,11 @@ def make_classifier(kind: str = "linear", seed: int = 42):
     """构造分类器 Pipeline（标准化 + 分类器）。"""
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import StandardScaler
-    if kind == "linear":
+    if kind == "linear": # construct liner classifier 线性svm分类器
         from sklearn.svm import LinearSVC
         clf = LinearSVC(C=0.01, class_weight="balanced", max_iter=5000, random_state=seed)
-    elif kind == "rf":
+
+    elif kind == "rf": # random forest 随机森林
         from sklearn.ensemble import RandomForestClassifier
         clf = RandomForestClassifier(n_estimators=100, max_depth=16, min_samples_leaf=3,
                                      max_features="sqrt", class_weight="balanced_subsample",

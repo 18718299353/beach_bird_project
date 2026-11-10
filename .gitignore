@@ -1,6 +1,7 @@
 ﻿# ---- data & model weights ----
 data/
 models/
+docs/
 *.pt
 *.pth
 *.onnx
@@ -38,4 +39,5 @@ desktop.ini
 .idea/
 scripts/.idea
 src/.idea
+
 
