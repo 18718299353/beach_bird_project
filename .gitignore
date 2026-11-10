@@ -36,3 +36,6 @@ desktop.ini
 
 # ---- IDEA -----
 .idea/
+scripts/.idea
+src/.idea
+
