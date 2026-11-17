@@ -1,21 +1,9 @@
-"""
-07_make_figures.py —— 生成报告/README 用的图表
-==============================================
+"""Generate figures for the report and README.
 
-前置条件：已经运行过
-    python scripts/06_evaluate_all.py
-    （以及各方法的预测 JSON 已存在）
-
-输出（results/figures/）：
-    fig_main_ap.png          各方法 AP@0.5 柱状图
-    fig_ap_vs_time.png       AP-推理时间散点图（看性价比）
-    fig_size_ap.png          small/medium/large 分组 AP
-    fig_density_recall.png   不同鸟群密度下的召回率
-    fig_qualitative.png      成功案例（GT vs YOLO vs HOG vs 传统）
-    fig_failures.png         失败案例（漏检/误检）
-    fig_yolo_curves.png      5 个 YOLO 模型的验证 mAP 曲线
-    fig_hog_ablation.png     HOG 的步长/特征/分类器消融
-    fig_tta_tile.png         基线 vs TTA vs 切图
+Run scripts/06_evaluate_all.py before plotting. The figures under
+results/figures/ include test AP, AP versus runtime, size and density
+breakdowns, qualitative examples, failure cases, validation curves for the
+five YOLO checkpoints, the HOG ablations and the TTA and tiling comparison.
 """
 
 from __future__ import annotations
@@ -48,7 +36,7 @@ FAMILY_COLORS = {
     "Deep learning": "#2f6db3",
     "Deep learning (post-hoc)": "#59a14f",
 }
-# 定性图里展示的方法（按优先级找存在的预测文件）
+# Try the prediction files in this order when picking a method for the qualitative plot.
 QUAL_METHODS = [
     ("YOLOv8n + aug", "yolo_yolov8n_aug_test.json", (255, 0, 0)),
     ("HOG + Linear SVM", "hog_hog_linear_test.json", (0, 140, 255)),
@@ -189,7 +177,7 @@ def _panel(ax, img, boxes, color, title, scores=None):
 
 
 def fig_qualitative(records):
-    """每个密度档选一张图，画 GT | YOLO 两列（列宽适配两栏论文）。"""
+    """Show one image per density band with ground truth and YOLO predictions side by side."""
     test = load_split("test")
     picks = []
     for lo, hi, label in [(3, 6, "sparse"), (8, 14, "moderate"), (30, 70, "dense")]:
@@ -218,7 +206,7 @@ def fig_qualitative(records):
 
 
 def fig_failures(records):
-    """挑三类失败：负样本误检、密集漏检、小目标漏检。"""
+    """Choose examples with false positives in empty scenes, misses in dense flocks, and missed small birds."""
     test = load_split("test")
     p, _ = find_pred("yolo_yolov8n_aug", "test")
     if p is None:
@@ -239,7 +227,7 @@ def fig_failures(records):
     small = [x for x in per if 0 < x["gt"] < 10]
     if small:
         cases.append(("Missed small/sparse birds", max(small, key=lambda x: x["fn"])))
-    # 第四个案例：中等密度里 FP+FN 都多的图
+    # Add a medium-density image with both many false positives and many misses.
     mid = [x for x in per if 10 <= x["gt"] < 20]
     if mid:
         cases.append(("Clutter (FP) and missed birds", max(mid, key=lambda x: x["fp"] + x["fn"])))
@@ -302,7 +290,7 @@ def fig_hog_ablation():
     rows = read_csv(p)
     if not rows:
         return
-    # 只画 stride / feature / classifier 三组
+    # Plot the stride, feature, and classifier ablations.
     fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.2))
     groups = [("stride", "Window stride"), ("feature", "Feature"), ("classifier", "Classifier")]
     for ax, (key, title) in zip(axes, groups):

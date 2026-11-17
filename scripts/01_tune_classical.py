@@ -1,26 +1,13 @@
-"""
-01_tune_classical.py —— 在验证集上为传统方法做参数扫描
-=========================================================
+"""Tune the classical detectors on the validation split.
 
-**只在 val 上运行**，测试集保持不动，避免数据泄漏。
+Example commands
+    python scripts/01_tune_classical.py --variant multiscale_blackhat --subset 120
 
-用法：
-    .venv\\Scripts\\python.exe scripts\\01_tune_classical.py --variant multiscale_blackhat --subset 120
-
-输出：
-    results/tables/classical_tuning.csv
-
-为什么需要这个脚本？
---------------------
-传统方法有很多"魔法数字"：阈值、最小面积、结构元素大小……
-我们不能凭感觉拍脑袋，而是固定其他参数、一次只改一个参数（坐标下降），
-用 AP@0.5 和最佳 F1 选择。报告中的 "parameter sensitivity" 表就来自这里。
+Sweep one parameter group at a time and compare validation AP at IoU 0.5
+and F1. The sweep writes results/tables/classical_tuning.csv. The selected
+parameters go to results/metrics/classical_best_params.json for later runs.
 """
 
-# 该文件用来为传统方法调参
-# 找到合适的参数给传统方法使用
-# 最终会输出一个classical_best_params.json，即调整好的参数
-# 该json文件会给后续的run_classical文件使用
 #
 
 from __future__ import annotations
@@ -43,7 +30,7 @@ from src.classical import ClassicalParams, detect_image
 
 
 def stratified_subset(records, n: int):
-    """按"每图鸟数"分层抽样，保证稀疏/密集场景都有代表。"""
+    """Sample by bird count to include both sparse and dense scenes."""
     if n >= len(records):
         return records
     rng = np.random.default_rng(42)
@@ -86,7 +73,7 @@ def main() -> None:
     print(f"Tuning on {len(records)} val images (variant={args.variant})")
 
     base = ClassicalParams()
-    # 坐标下降：每个 stage 只扫描一组参数，选 AP 最高的一组进入下一阶段
+    # Sweep one parameter group at a time and carry the best AP forward.
     stages = [
         ("threshold", {"resp_floor": [8, 15, 22, 30], "otsu_scale": [1.0, 1.3, 1.6]}),
         ("shape", {"min_area": [80, 110, 150], "min_fill": [0.30, 0.40, 0.50]}),
@@ -112,7 +99,7 @@ def main() -> None:
                 best_params = p
         print(f"[stage {stage_name}] best so far: AP={best_ap:.4f}")
 
-    # 保存所有尝试
+    # Save all parameter trials.
     out_csv = TABLE_DIR / "classical_tuning.csv"
     fieldnames = sorted({k for r in rows for k in r.keys()})
     with open(out_csv, "w", newline="", encoding="utf-8") as f:
@@ -120,7 +107,7 @@ def main() -> None:
         writer.writeheader()
         writer.writerows(rows)
 
-    # 保存最佳参数，后续 test 直接读取
+    # Save the selected parameters for evaluation.
     with open(METRICS_DIR / "classical_best_params.json", "w", encoding="utf-8") as f:
         json.dump({k: (list(v) if isinstance(v, tuple) else v)
                    for k, v in vars(best_params).items()}, f, indent=2)

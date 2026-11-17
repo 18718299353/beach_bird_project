@@ -1,20 +1,12 @@
-"""
-05_predict_yolo.py —— 用训练好的 YOLO 权重生成标准化预测结果
-=============================================================
+"""Generate prediction JSONs from a trained YOLO checkpoint.
 
-示例：
-    # 普通推理
-    .venv\\Scripts\\python.exe scripts\\05_predict_yolo.py --weights models/runs/yolov8n_aug/weights/best.pt --name yolov8n_aug --split val
+Example commands
+    python scripts/05_predict_yolo.py --weights models/runs/yolov8n_aug/weights/best.pt --name yolov8n_aug --split val
 
-    # 测试时增强（TTA：多尺度 + 翻转，精度略升、速度变慢）
-    ... --tta
-
-    # 切图推理（tiled inference）：把 512×512 切成 2×2 有重叠的小块，
-    # 再放大到 640 检测，等价于提高了小目标的分辨率
-    ... --tiles 2 --overlap 96
-
-注意：为了计算 mAP，conf 要设得很低（0.001），让模型输出尽量多的候选框；
-      AP 会自己按置信度排序，不需要我们提前卡阈值。
+Add --tta for multi-scale and flip inference. Use --tiles 2 --overlap 96
+--imgsz 640 for overlapping 2x2 tiles. Both settings reuse the same weights.
+Use a low confidence cutoff (default 0.001) for AP evaluation, which ranks
+detections by confidence.
 """
 
 from __future__ import annotations
@@ -32,7 +24,7 @@ from src.common import (METRICS_DIR, PRED_DIR, ensure_dirs, nms, save_prediction
 
 
 def predict_standard(model, image_path, args):
-    """普通整图推理，返回 (N,5) 数组。"""
+    """Run whole-image inference and return an (N, 5) array."""
     r = model.predict(source=str(image_path), imgsz=args.imgsz, conf=args.conf,
                       iou=args.iou, max_det=args.max_det, device=args.device,
                       augment=args.tta, verbose=False)[0]
@@ -44,12 +36,10 @@ def predict_standard(model, image_path, args):
 
 
 def predict_tiled(model, image, args):
-    """切图推理：把大图切成 n×n 个有重叠的 tile，分别检测后映射回原图并做全局 NMS。
+    """Detect in overlapping tiles and map the boxes back to image coordinates.
 
-    为什么有效？
-    512×512 里一只 20 px 的小鸟，直接送进网络只占 20 个像素；
-    切成 2×2 后每个 tile 再放大到 640，小鸟在输入里就变成 ~70 像素，
-    网络更容易识别。代价是推理时间变成 n² 倍。
+    Upsampling each crop gives small birds more input pixels. Run the detector
+    on all n x n tiles and merge their boxes with NMS.
     """
     h, w = image.shape[:2]
     n = args.tiles

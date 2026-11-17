@@ -6,22 +6,13 @@
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5c3ee8)
 ![License](https://img.shields.io/badge/License-Coursework-lightgrey)
 
-> **Just want to run it?** Jump to [Quick start](#quick-start). You need Python 3.10+, the
-> Kaggle dataset, and about 30 minutes for one YOLO model.
+This project compares classical image processing, HOG-based classifiers and YOLO for detecting
+birds in coastal images. The code uses the dataset's supplied train, validation and test splits
+and evaluates detection predictions with a shared script.
 
-A hands-on benchmark of **three different ways to detect birds in beach photos**:
-classical image processing, HOG + SVM machine learning, and modern YOLO deep learning.
-
-If you have ever tried to count birds on a beach, you know the problem. A single photo can
-contain dozens of small, partially hidden birds that look almost identical to rocks, foam and
-wave crests. Doing this by hand for thousands of images is slow and inconsistent. This project
-asks a simple question:
-
-> **How far can we get with handcrafted image processing, how far with a classical
-> sliding-window classifier, and how much better is a modern detector?**
-
-The repository contains the full pipeline: dataset loading, all detectors, training scripts,
-prediction scripts, a shared evaluation implementation, result tables, and a written report.
+Start with [Quick start](#quick-start) on Windows or the [macOS commands](#macos-run-and-demo)
+on Apple Silicon. A one-epoch run checks that training and prediction work. The benchmark
+table uses fully trained checkpoints.
 
 ---
 
@@ -30,6 +21,7 @@ prediction scripts, a shared evaluation implementation, result tables, and a wri
 - [What is in this project](#what-is-in-this-project)
 - [Results at a glance](#results-at-a-glance)
 - [Quick start](#quick-start)
+- [macOS run and demo](#macos-run-and-demo)
 - [Dataset](#dataset)
 - [Repository layout](#repository-layout)
 - [Where each method lives](#where-each-method-lives)
@@ -59,7 +51,7 @@ Three method families, **14 comparison settings**, and **10 trained models**: 5 
 | Deep learning | YOLOv8n / YOLOv8s / YOLO11n | One-stage detectors with controlled ablations |
 | Deep learning | YOLOv8n @960 / TTA / 2x2 tiles | Resolution and inference-time experiments |
 
-All methods are evaluated by the **same code** in `src/common.py`, so the comparison is fair.
+The shared evaluator uses the same data splits and metric definitions for all settings.
 
 ---
 
@@ -96,8 +88,9 @@ applied unchanged to the test split. Higher AP/F1 is better; lower ms/img is bet
 - Upsampling to 960 or 2x2 tiling does **not** help on this natively 512-px dataset. Tiling
   badly hurts large birds (AP 0.680 to 0.493), which is itself a useful negative result.
 
-The full table is written to `results/tables/main_results.csv` by
-`scripts/06_evaluate_all.py`. The written report is in `report/`
+These are the group's original benchmark results. A new evaluation writes its own table to
+`results/tables/main_results.csv`, so use a separate checkout for verification runs and keep
+the original report results separately. The written report is in `report/`
 (`COMP9517_Group_Project_Report.docx`, or the exported PDF).
 
 ---
@@ -193,12 +186,8 @@ Or let `kagglehub` download it:
 .\.venv\Scripts\python.exe -c "import kagglehub; print(kagglehub.dataset_download('liugalhigh/beach-bird'))"
 ```
 
-Move the downloaded folder so that the path above exists. If your folder name is different,
-change one line at the top of `src/common.py`:
-
-```python
-DATA_ROOT = PROJECT_ROOT / "data" / "Beach Bird Detection Dataset v1.0"
-```
+Place `images/` and `labels/` directly inside `data/Beach Bird Detection Dataset v1.0/`.
+The data loader and YOLO prediction script both look for this exact directory name.
 
 The dataset is already split into **1,369 train / 291 validation / 240 test** images. Do not
 re-split it; the official split is source-group-aware and prevents leakage.
@@ -236,6 +225,93 @@ Results saved to models/runs/smoke
 For real results, continue with the commands in
 [Run one method end to end](#run-one-method-end-to-end) or
 [Reproduce all experiments](#reproduce-all-experiments).
+
+---
+
+## macOS run and demo
+
+Run these commands from the repository root in Terminal. The runs below were checked on
+an Apple M4 Mac with Python 3.12.14, PyTorch 2.15.0, Ultralytics 8.4.213 and OpenCV 4.14.0.94.
+
+```bash
+python3 -m venv .venv         # use a Python 3.10–3.12 interpreter
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -c 'import cv2, torch; print("OpenCV HOG:", hasattr(cv2, "HOGDescriptor")); print("MPS:", torch.backends.mps.is_available())'
+```
+
+Put the Kaggle data under `data/Beach Bird Detection Dataset v1.0/` as shown above. On Kaggle,
+the complete archive is release 3 of the dataset titled *Beach Bird Detection Dataset v1.0*.
+Use the supplied images and labels; the `annotation screenshot/` folder is not needed. Run
+`python scripts/00_explore_dataset.py` to check for 1,369 train, 291 validation and 240 test
+images before starting training.
+
+Use `device=mps` when the check prints `MPS: True`. Set `device=cpu` for a CPU run and allow
+more time. The commands use batch size 8 at 512 px.
+
+### Check training with one epoch
+
+```bash
+device=mps
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+python -u scripts/04_train_yolo.py --model yolov8n.pt --name yolov8n_plain \
+  --imgsz 512 --aug plain --epochs 1 --batch 8 --workers 0 --device "$device"
+
+python scripts/05_predict_yolo.py --weights models/runs/yolov8n_plain/weights/best.pt \
+  --name yolov8n_plain --split val --imgsz 512 --device "$device"
+```
+
+Check for `models/runs/yolov8n_plain/weights/best.pt` and
+`results/predictions/yolo_yolov8n_plain_val.json`.
+
+### Train and evaluate YOLOv8n with augmentation
+
+Set `device` and export the MPS fallback variable as above. The M4 run finished 60 epochs in
+about 52 minutes. With this patience setting, another run may stop earlier.
+
+```bash
+python -u scripts/04_train_yolo.py --model yolov8n.pt --name yolov8n_aug \
+  --imgsz 512 --aug default --epochs 60 --batch 8 --workers 0 \
+  --seed 42 --patience 15 --device "$device"
+
+weights=models/runs/yolov8n_aug/weights/best.pt
+for split in val test; do
+  python scripts/05_predict_yolo.py --weights "$weights" --name yolov8n_aug \
+    --split "$split" --imgsz 512 --device "$device"
+  python scripts/05_predict_yolo.py --weights "$weights" --name yolov8n_aug_tta \
+    --split "$split" --imgsz 512 --tta --device "$device"
+  python scripts/05_predict_yolo.py --weights "$weights" --name yolov8n_aug_tile2 \
+    --split "$split" --imgsz 640 --tiles 2 --overlap 96 --device "$device"
+done
+python scripts/06_evaluate_all.py
+```
+
+All three inference settings use the same `best.pt`. The prediction loop writes six JSON files
+under `results/predictions/`. The evaluator uses the validation predictions to choose the
+confidence threshold for each method and reports test scores in `results/tables/main_results.csv`.
+It includes registered methods with both prediction files and saves the PR plot to
+`results/figures/fig_pr_curves.png`.
+
+### Display detections on one image
+
+```bash
+yolo predict model=models/runs/yolov8n_aug/weights/best.pt \
+  source='data/Beach Bird Detection Dataset v1.0/images/val/beach_bird_1370.jpg' \
+  imgsz=512 conf=0.25 device="$device" save=True project=results/demo name=yolov8n_aug
+```
+
+Open `results/demo/yolov8n_aug/beach_bird_1370.jpg` to view the boxes.
+
+### What we verified locally
+
+All 14 settings produced predictions for the 291 validation images and 240 test images.
+YOLOv8n with augmentation completed 60 epochs on MPS. The other four YOLO checkpoints ran
+for one epoch each. `hog_linear` used all 1,369 training images, and `hog_lbp_linear` and
+`hog_rf` each used an 80-image training subset.
+
+For the full YOLOv8n checkpoint, CPU inference gave test AP@0.5 of 0.863 for standard
+inference, 0.849 with TTA and 0.779 with 2×2 tiling. The full experiment settings used for
+the report are below.
 
 ---
 
@@ -531,7 +607,8 @@ results/tables/main_results.csv
 results/figures/fig_pr_curves.png
 ```
 
-You should see `YOLOv8n + aug` with AP@0.5 around **0.87**.
+The original RTX 3060 run reported AP@0.5 around **0.87** for `YOLOv8n + aug`. A short run
+or a different training environment can produce different scores and timings.
 
 > `06_evaluate_all.py` uses a fixed list of method names at the top of the file. If you use a
 > new `--name` or `--tag`, add it to that list, otherwise the method is skipped.
@@ -540,8 +617,9 @@ You should see `YOLOv8n + aug` with AP@0.5 around **0.87**.
 
 ## Reproduce all experiments
 
-The full benchmark is five YOLO models, three HOG classifiers, and three classical variants.
-It takes roughly 1.5-2.5 hours on the RTX 3060 used here.
+The full benchmark evaluates five YOLO checkpoints, two additional YOLO inference settings,
+four HOG-based settings and three classical variants. It takes roughly 1.5–2.5 hours on the
+RTX 3060 used for the report.
 
 ### Step 1: dataset statistics
 
@@ -603,10 +681,15 @@ Predict for all five:
 $models = @("yolov8n_plain", "yolov8n_aug", "yolo11n_aug", "yolov8s_aug", "yolov8n_aug_960")
 
 foreach ($m in $models) {
-    .\.venv\Scripts\python.exe scripts\05_predict_yolo.py --weights "models\runs\$m\weights\best.pt" --name $m --split val
-    .\.venv\Scripts\python.exe scripts\05_predict_yolo.py --weights "models\runs\$m\weights\best.pt" --name $m --split test
+    $size = if ($m -eq "yolov8n_aug_960") { 960 } else { 512 }
+    .\.venv\Scripts\python.exe scripts\05_predict_yolo.py --weights "models\runs\$m\weights\best.pt" --name $m --split val --imgsz $size
+    .\.venv\Scripts\python.exe scripts\05_predict_yolo.py --weights "models\runs\$m\weights\best.pt" --name $m --split test --imgsz $size
 }
 ```
+
+The prediction script defaults to 512 px even when the checkpoint was trained at 960 px.
+The example sets the size explicitly for a matched-resolution run; check the original
+inference settings before comparing its numbers with the report.
 
 The two post-hoc experiments:
 

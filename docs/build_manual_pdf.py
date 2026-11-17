@@ -1,17 +1,8 @@
-"""
-build_manual_pdf.py —— 把中文 Markdown 使用文档转换成 PDF
-=========================================================
+"""Convert the Chinese Markdown guide to HTML and PDF.
 
-用法：
-    python docs/build_manual_pdf.py
-
-依赖：
-    pip install markdown
-    Microsoft Edge（用于 headless 打印 PDF；也可以手动用浏览器打印）
-
-输出：
-    docs/使用文档_中文.html
-    docs/使用文档_中文.pdf
+Run python docs/build_manual_pdf.py from the repository root.
+Install the markdown package and use Edge for headless PDF printing.
+The generated files go under docs/. The HTML can also be printed from a browser.
 """
 
 from __future__ import annotations

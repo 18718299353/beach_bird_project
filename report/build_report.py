@@ -1,18 +1,11 @@
-"""
-build_report.py —— 把 report_template.html + 实验结果 渲染成最终 PDF
-====================================================================
+"""Build the PDF report from report_template.html and the experiment results.
 
-用法：
-    python report/build_report.py
+Run python report/build_report.py from the repository root. It reads the
+result tables and metrics, fills the template, and writes report/report.html.
+Edge prints the A4 two-column PDF in headless mode. PyMuPDF reports the page
+count so it can be checked against the 10-page body limit.
 
-流程：
-1. 读取 results/tables/*.csv、results/metrics/*.json；
-2. 生成 HTML 表格，替换模板里的 {{TOKEN}}；
-3. 写出 report/report.html；
-4. 调用 Microsoft Edge headless 打印成 A4 两栏 PDF；
-5. 用 PyMuPDF 输出页数（作业限制正文 ≤10 页）。
-
-没有安装 Edge 时，可以手动用浏览器打开 report.html 并"打印为 PDF"。
+You can also open report.html in a browser and print it to PDF.
 """
 
 from __future__ import annotations
@@ -91,7 +84,7 @@ def table_dataset() -> str:
 """
 
 
-# 主表里展示的方法及短名
+# Methods and short labels used in the main results table.
 MAIN_ORDER = [
     ("Global Otsu", "Global Otsu"),
     ("Multi-scale Black-hat", "Black-hat"),
@@ -285,7 +278,7 @@ def main() -> None:
     for k, v in tokens.items():
         out = out.replace("{{" + k + "}}", v)
 
-    # 如果还有未替换的 token，列出来方便排查
+    # List any template placeholders that still need values.
     import re
     left = sorted(set(re.findall(r"\{\{[A-Z0-9_]+\}\}", out)))
     if left:
@@ -295,7 +288,7 @@ def main() -> None:
     html_path.write_text(out, encoding="utf-8")
     print(f"[ok] wrote {html_path}")
 
-    # 调用 Edge 打印 PDF
+    # Print the PDF with Edge.
     edge = Path(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe")
     pdf_path = REPORT_DIR / "COMP9517_Group_Project_Report.pdf"
     if edge.exists():

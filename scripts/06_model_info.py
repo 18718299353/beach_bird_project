@@ -1,9 +1,7 @@
-"""
-06_model_info.py —— 统计每个模型的参数量和文件大小
-===================================================
+"""Summarize model file sizes and parameter counts for the report.
 
-报告中需要比较 "模型大小 / 参数量 / 推理速度"。
-YOLO 的参数量从权重里读取；HOG+SVM 的参数就是特征维度 + 分类器系数。
+Read the YOLO parameter counts from the checkpoints and use the feature
+dimensions and fitted classifier parameters for the HOG models.
 """
 
 from __future__ import annotations
@@ -55,7 +53,7 @@ def main() -> None:
         if hasattr(clf, "coef_"):
             n_params = int(clf.coef_.size + clf.intercept_.size)
         else:
-            # 随机森林：用树的节点数近似参数量
+            # Approximate the random forest parameter count using the number of tree nodes.
             n_params = int(sum(t.tree_.node_count for t in clf.estimators_))
         info[name] = {"params_millions": n_params / 1e6,
                       "weights_mb": p.stat().st_size / 1e6, "family": "HOG+SVM"}

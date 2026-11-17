@@ -1,7 +1,6 @@
-"""COMP9517 Beach Bird Detection project source package.
+"""Detection and evaluation utilities for the COMP9517 Beach Bird project.
 
-这个包包含三类检测方法（传统图像处理 / HOG+SVM / YOLO）以及统一的评估工具。
-所有脚本都可以通过 `python -m src.xxx` 的方式运行。
+The command-line entry points are in scripts/.
 """
 
 __version__ = "1.0.0"

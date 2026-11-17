@@ -1,27 +1,16 @@
-"""
-03_train_hog_svm.py —— 训练 HOG/LBP + SVM/RF 滑窗检测器
-========================================================
+"""Train a HOG or HOG+LBP classifier for bird detection.
 
-示例：
-    # 主模型：HOG + LinearSVC + 难负样本挖掘
-    .venv\\Scripts\\python.exe scripts\\03_train_hog_svm.py --name hog_linear --hard-neg 6000
+Example commands
+    python scripts/03_train_hog_svm.py --name hog_linear --hard-neg 6000
+    python scripts/03_train_hog_svm.py --name hog_lbp_linear --feature hog_lbp --hard-neg 6000
+    python scripts/03_train_hog_svm.py --name hog_rf --classifier rf --hard-neg 6000
 
-    # 特征对比：HOG + LBP
-    .venv\\Scripts\\python.exe scripts\\03_train_hog_svm.py --name hog_lbp_linear --feature hog_lbp --hard-neg 6000
-
-    # 分类器对比：RandomForest
-    .venv\\Scripts\\python.exe scripts\\03_train_hog_svm.py --name hog_rf --classifier rf --hard-neg 6000
-
-只使用 train 训练、val 评估；test 由 03_run_hog_svm.py 在最终确定配置后运行一次。
-
-输出：
-    models/hog_svm/<name>.joblib                 训练好的模型
-    results/predictions/hog_<name>_val.json      val 预测
-    results/metrics/hog_<name>.json              指标 + 训练耗时
-    results/metrics/hard_negatives_<name>.json   难负样本位置（供其他分类器复用）
+Fit on the training split and use validation to check the configuration.
+The test split is evaluated separately with 03_run_hog_svm.py. This script
+saves the classifier under models/hog_svm/ and the training statistics and
+hard-negative boxes under results/metrics/.
 """
 
-# 进行模型训练,构建训练数据、训练分类器、难负样本挖掘、保存模型
 
 from __future__ import annotations
 
@@ -86,13 +75,13 @@ def main() -> None:
 
     hard_boxes = []
     if args.hard_neg > 0:
-        # 用第一版模型去训练集上"找错"，把高分误检收集起来
+        # Use the initial classifier to collect high-scoring false positives from training images.
         detector0 = WindowDetector(clf, extractor, params)
         det_params = HogParams(**{**asdict(params), "score_threshold": 0.0})
         detector0.params = det_params
         print(f"[train] mining hard negatives from {args.hard_images} train images...")
         t2 = time.time()
-        # 直接收集框，便于其他特征配置复用
+        # Save the boxes so other feature configurations can reuse them.
         rng = np.random.default_rng(42)
         idx = rng.choice(len(train), size=min(args.hard_images, len(train)), replace=False)
         X_hard = []
@@ -134,7 +123,7 @@ def main() -> None:
 
     t_total = time.time() - t0
 
-    # 保存模型
+    # Save the fitted classifier.
     import joblib
     model_dir = MODELS_DIR / "hog_svm"
     model_dir.mkdir(parents=True, exist_ok=True)

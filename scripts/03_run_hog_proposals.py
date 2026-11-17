@@ -1,26 +1,15 @@
-"""
-03_run_hog_proposals.py —— 混合检测器：传统方法出候选框 + HOG/SVM 打分
-======================================================================
+"""Score classical region proposals with a trained HOG classifier.
 
-动机：
-纯滑窗 HOG 在本数据集上定位很差——一只 20 px 的鸟要被 32/48/64 的窗口
-以 IoU≥0.5 套住，对步长和窗口尺寸极其敏感。传统黑帽方法虽然误检多，
-但它给出的候选框通常**贴合目标轮廓**。于是我们做一个级联：
+Multiscale black-hat and top-hat filters generate a small set of candidate
+boxes. Their boxes can fit small birds more tightly than a fixed sliding
+window. Extract HOG features from the candidate crops, score them, and use
+thresholding and NMS to filter the detections.
 
-    黑帽/顶帽多尺度分割 → 候选框（~30 个/图）
-    → 每个候选框裁 patch → HOG 特征 → SVM 打分
-    → 阈值 + NMS → 最终检测
-
-这样既保留了传统方法良好的定位，又用学习到的特征过滤掉大量礁石/浪花误检。
-速度也比全图滑窗快一个数量级（每图只需几十次 HOG 计算）。
-
-用法：
+Example commands
     python scripts/03_run_hog_proposals.py --model hog_linear --split val
     python scripts/03_run_hog_proposals.py --model hog_linear --split test
 """
 
-# 模型测试
-# 加载训练好的模型，使用滑动窗口检测鸟类并评估性能
 
 from __future__ import annotations
 
@@ -45,15 +34,15 @@ from src.hog_svm import FeatureExtractor, crop_square
 def detect_proposals(img, model, extractor, classical_params: ClassicalParams,
                      candidate_threshold: float = 0.10, nms_iou: float = 0.4,
                      max_det: int = 100):
-    """返回 (N,5) 的 [x1,y1,x2,y2,svm_score]。"""
+    """Return an (N, 5) array of xyxy boxes and classifier scores."""
     cand = detect_image(img, "multiscale_blackhat", classical_params)
     if len(cand) == 0:
         return np.zeros((0, 5), np.float32)
-    # 只保留传统方法分数不太低的候选，减少 HOG 计算量
+    # Discard low-scoring proposals before computing HOG features.
     cand = cand[cand[:, 4] >= candidate_threshold]
     if len(cand) == 0:
         return np.zeros((0, 5), np.float32)
-    # 按传统分数保留前 80 个，避免密集图里候选爆炸
+    # Keep the top 80 proposals to bound the work in dense scenes.
     if len(cand) > 80:
         cand = cand[np.argsort(-cand[:, 4])[:80]]
 

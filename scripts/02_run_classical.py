@@ -1,18 +1,11 @@
+"""Run the classical detectors on validation or test images.
+
+Run all three variants using the settings selected on validation:
+    python scripts/02_run_classical.py --variant all --split test --use-best
+
+Add --split val --limit 20 for a short check. The script uses
+ClassicalParams defaults when the tuning file is missing.
 """
-02_run_classical.py —— 在 val/test 上运行传统方法
-==================================================
-
-用法：
-    # 用调好的参数在测试集上跑三个变体
-    .venv\\Scripts\\python.exe scripts\\02_run_classical.py --variant all --split test --use-best
-
-    # 快速调试（只跑 20 张）
-    ... --split val --limit 20
-
-参数来自 scripts/01_tune_classical.py 在验证集上得到的结果（--use-best），
-如果没有调参文件，就用 ClassicalParams 的默认值。
-"""
-# 该文件
 #
 #
 #
@@ -55,7 +48,7 @@ def main() -> None:
     params = load_best() if args.use_best else ClassicalParams()
     variants = VARIANTS if args.variant == "all" else [args.variant]
     for v in variants:
-        # global_otsu 不使用多尺度参数，但其余过滤参数仍适用
+        # Global Otsu uses the shared filters and has no multiscale parameters.
         run_split(args.split, v, params, limit=args.limit)
 
 

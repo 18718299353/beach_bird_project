@@ -1,27 +1,17 @@
-"""
-00_explore_dataset.py —— 数据集探索与统计
-==========================================
+"""Summarize the dataset and plot examples with ground-truth boxes.
 
-运行方式（在项目根目录下）：
-    .venv\\Scripts\\python.exe scripts\\00_explore_dataset.py
+Run python scripts/00_explore_dataset.py from the repository root. The
+outputs are dataset_stats.json in results/metrics/ and the example and
+distribution plots in results/figures/.
 
-产出：
-    results/metrics/dataset_stats.json     数据统计（写报告时直接引用）
-    results/figures/fig_dataset_examples.png  不同密度场景的样例（带真值框）
-    results/figures/fig_dataset_stats.png     框大小 / 每图数量 / 亮度分布
-
-为什么先做这一步？
-------------------
-1. 了解"鸟有多大、图里有多少只"，才能决定 HOG 滑窗的尺寸范围和 YOLO 的输入分辨率。
-2. 本数据集有很多**小目标**（中位框面积只占全图 0.68%），这是后面所有方法的主要难点。
-3. 负样本（0 只鸟）占 11%，是评估误检率的重要子集。
+Use the size and count distributions to choose sliding-window sizes and
+detector input sizes. The median box covers about 0.68% of the image, and
+roughly 11% of images contain zero birds. Those images help measure false
+positives.
 """
 
 #
-# 该文件只是用来统计和探索鸟数据集的数据分布情况
-# 后续脚本不依赖该脚本的产出
-# 因此，该文件目前只是给人看的
-# 报告中没有使用该文件的产出
+# The detection scripts can run independently of these statistics.
 #
 
 from __future__ import annotations
@@ -32,7 +22,7 @@ from pathlib import Path
 
 import cv2
 import matplotlib
-matplotlib.use("Agg")  # 无窗口环境下保存图片
+matplotlib.use("Agg")  # Save figures without opening a window.
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -101,14 +91,14 @@ def main() -> None:
         json.dump(stats, f, indent=2, ensure_ascii=False)
 
     # ------------------------------------------------------------------
-    # 图 1：不同密度 / 负样本的样例
+    # Figure 1 groups example images by bird count, including empty scenes.
     # ------------------------------------------------------------------
     train = load_split("train")
     picks = []
     for lo, hi, name in DENSITY_BINS:
         cand = [r for r in train if lo <= r.num_objects <= hi]
         if cand:
-            # 取该组里最靠近组中位数的图片，避免挑到极端样例
+            # Pick the image closest to the median count in each group.
             med = int(np.median([r.num_objects for r in cand]))
             cand.sort(key=lambda r: (abs(r.num_objects - med), r.image_id))
             picks.append((name, cand[0]))
@@ -126,7 +116,7 @@ def main() -> None:
     plt.close(fig)
 
     # ------------------------------------------------------------------
-    # 图 2：统计分布
+    # Figure 2 shows the dataset distributions.
     # ------------------------------------------------------------------
     fig, axes = plt.subplots(1, 3, figsize=(12, 3.4))
     axes[0].hist(np.sqrt(areas), bins=60, color="#4c72b0", alpha=0.9)
@@ -143,9 +133,9 @@ def main() -> None:
     axes[1].set_ylabel("number of images (log)")
     axes[1].set_title(f"(b) Train density (max = {counts.max()})")
 
-    # 亮度分布：说明为什么"背景建模/阈值分割"会遇到困难（水面反光、沙滩明暗变化）
+    # Plot brightness variation from reflections and changing beach lighting.
     brightness = []
-    for rec in train[::5]:  # 每 5 张抽样一次即可
+    for rec in train[::5]:  # Sample every fifth image.
         g = cv2.cvtColor(rec.load_image(), cv2.COLOR_BGR2GRAY)
         brightness.append(float(g.mean()))
     axes[2].hist(brightness, bins=40, color="#55a868", alpha=0.9)

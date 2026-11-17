@@ -1,17 +1,10 @@
-"""
-03_make_hog_table.py —— 汇总 HOG 消融实验，生成 results/tables/hog_ablation.csv
-=================================================================================
+"""Write the HOG ablation table to results/tables/hog_ablation.csv.
 
-所有数字都在 **validation** 上计算，且使用同一套 AP 实现。
-对比维度：
-  - 难负样本数量：0 vs 6000
-  - 特征：HOG vs HOG+LBP
-  - 分类器：Linear SVM vs Random Forest
-  - 推理方式：全图滑窗 vs 传统候选框 + HOG 分类（级联）
+The comparisons use the validation split and the same AP implementation.
+They cover hard negatives (0 or 6,000), HOG and HOG+LBP, linear SVM and
+random forest, and sliding windows and region proposals.
 """
 
-# 构建消融对比表
-# 完成训练运行后
 
 from __future__ import annotations
 

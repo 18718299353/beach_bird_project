@@ -1,24 +1,14 @@
-"""
-03_run_hog_svm.py —— 用训练好的 HOG/LBP 模型在 val 或 test 上做滑窗检测
-=======================================================================
+"""Run sliding-window detection with a trained HOG or HOG+LBP model.
 
-示例：
-    # 在验证集上评估（调 stride / 窗口尺度 / NMS）
-    .venv\\Scripts\\python.exe scripts\\03_run_hog_svm.py --name hog_linear --split val --stride 16
+Example commands
+    python scripts/03_run_hog_svm.py --name hog_linear --split val --stride 16
+    python scripts/03_run_hog_svm.py --name hog_linear --split test --stride 16
 
-    # 最终测试集（只跑一次）
-    .venv\\Scripts\\python.exe scripts\\03_run_hog_svm.py --name hog_linear --split test --stride 16
-
-输出：
-    results/predictions/hog_<name>_<split>.json
-    results/metrics/hog_<name>_<split>.json
-
-注意：stride、window_sizes、NMS 都是**推理时**参数，不需要重新训练模型。
-      这正是做"步长/尺度对精度与速度影响"实验的方便之处。
+Choose stride, window sizes, and NMS settings on validation, then use those
+settings on test. These inference settings can be varied with the same
+trained model. Predictions and metrics go under results/.
 """
 
-# 模型测试
-# 加载训练好的模型，使用滑动窗口检测鸟类并评估性能
 
 from __future__ import annotations
 

@@ -1,21 +1,10 @@
-"""
-06_evaluate_all.py —— 汇总所有方法，计算统一指标并生成结果表
-=============================================================
+"""Evaluate all settings with both validation and test predictions.
 
-用法：
-    .venv\\Scripts\\python.exe scripts\\06_evaluate_all.py
-
-做的事情：
-1. 读取每个方法在 **val** 上的预测，选出使 F1 最大的置信度阈值；
-2. 把这个阈值原样用到 **test** 上（test 不参与任何调参）；
-3. 计算 AP@0.5 / AP@0.75 / AP@[.5:.95]、P/R/F1、计数误差、负样本误检、速度；
-4. 按目标尺寸（small/medium/large）和鸟群密度分组统计；
-5. 保存 CSV 表格、PR 曲线图、每张图的 TP/FP/FN（用于失败案例分析）。
-
-为什么要"在 val 上选阈值，再用于 test"？
-----------------------------------------
-如果直接在 test 上挑一个最好的阈值，相当于用测试集调参，
-得到的分数会虚高，不能代表真实泛化能力。作业明确要求避免这种数据泄漏。
+Run python scripts/06_evaluate_all.py from the repository root. Select the
+confidence threshold that maximizes F1 on validation and use it for the
+test-set operating point. The outputs include AP, precision, recall, F1,
+counting errors, false positives in empty scenes, and runtime. The script
+also saves size and density breakdowns, a PR plot, and per-image counts.
 """
 
 from __future__ import annotations
@@ -37,7 +26,7 @@ from src.common import (FIG_DIR, METRICS_DIR, PRED_DIR, TABLE_DIR, box_areas, bo
                         negative_scene_fp, pr_curve, prf_at_threshold,
                         select_operating_threshold, size_breakdown)
 
-# 每个方法：显示名、所属类别、预测文件前缀、训练耗时文件（可选）
+# Each entry gives the display name, family, prediction prefix, and optional training metrics file.
 METHODS = [
     dict(key="classical_global_otsu", display="Global Otsu", family="Non-learning",
          prefix="classical_global_otsu", train_json=None),
@@ -63,7 +52,7 @@ METHODS = [
          prefix="yolo_yolov8s_aug", train_json="train_yolov8s_aug.json"),
     dict(key="yolov8n_aug_960", display="YOLOv8n + aug @960", family="Deep learning",
          prefix="yolo_yolov8n_aug_960", train_json="train_yolov8n_aug_960.json"),
-    # 后处理改进（同一权重，不同推理策略）
+    # These inference variants share the augmented YOLOv8n checkpoint.
     dict(key="yolov8n_aug_tta", display="YOLOv8n + aug + TTA", family="Deep learning (post-hoc)",
          prefix="yolo_yolov8n_aug_tta", train_json="train_yolov8n_aug.json"),
     dict(key="yolov8n_aug_tile2", display="YOLOv8n + aug + 2×2 tiles",
@@ -73,7 +62,7 @@ METHODS = [
 
 
 def per_image_stats(preds, records, threshold: float, iou_thr: float = 0.5) -> List[Dict]:
-    """逐图统计 TP/FP/FN 和定位质量，供失败案例分析使用。"""
+    """Collect per-image TP, FP, FN, and localization statistics."""
     rows = []
     for rec in records:
         det = preds.get(rec.image_id, np.zeros((0, 5), np.float32))
@@ -125,9 +114,9 @@ def main() -> None:
         val_preds, val_meta = load_predictions(val_path)
         test_preds, test_meta = load_predictions(test_path)
 
-        # 1) 在 val 上选阈值
+        # Choose the operating threshold on validation.
         thr, val_best = select_operating_threshold(val_preds, val_records)
-        # 2) 原样用于 test
+        # Use the validation threshold for the test split.
         ap = evaluate_ap(test_preds, test_records, 0.5)
         aps = evaluate_ap_range(test_preds, test_records,
                                 iou_thresholds=np.arange(0.5, 1.0, 0.05))
@@ -162,11 +151,11 @@ def main() -> None:
         for d in dens:
             density_rows.append({"method": method["display"], **d})
 
-        # 逐图统计
+        # Save per-image statistics for failure analysis.
         with open(METRICS_DIR / f"per_image_{method['key']}_test.json", "w", encoding="utf-8") as f:
             json.dump(per_image_stats(test_preds, test_records, thr), f)
 
-        # PR 曲线
+        # Add the method to the test PR plot.
         rec, prec = pr_curve(test_preds, test_records, 0.5)
         plt.plot(rec, prec, label=f"{method['display']} ({ap:.3f})", color=color, lw=1.6)
 
@@ -174,7 +163,7 @@ def main() -> None:
               f"P={prf['precision']:.3f} R={prf['recall']:.3f} F1={prf['f1']:.3f} "
               f"negFP/img={neg['neg_fp_per_image']:.2f} {row['ms_per_image']:.0f}ms")
 
-    # ---------------- 保存表格 ----------------
+    # Write the results tables.
     import csv
     def write_csv(path, rows):
         if not rows:
