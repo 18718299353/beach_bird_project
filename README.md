@@ -313,6 +313,9 @@ For the full YOLOv8n checkpoint, CPU inference gave test AP@0.5 of 0.863 for sta
 inference, 0.849 with TTA and 0.779 with 2×2 tiling. The full experiment settings used for
 the report are below.
 
+See the [local reproduction results](results/tables/reproduction_results.csv) and the
+[20-second training and inference demo](demo/beach_bird_demo.mp4).
+
 ---
 
 ## Dataset
